@@ -1,0 +1,5 @@
+{
+  "name": "Sistema de Canal de Denúncias",
+  "description": "A comprehensive whistleblowing channel application that allows users to submit, track, and manage reports securely and anonymously. It includes separate interfaces for whistleblowers and analysts.",
+  "requestFramePermissions": []
+}
