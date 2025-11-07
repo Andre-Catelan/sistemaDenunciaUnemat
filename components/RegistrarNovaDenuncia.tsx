@@ -3,9 +3,10 @@ import React, { useState, useRef } from 'react';
 
 interface RegistrarNovaDenunciaProps {
   navigateToConfirmacao: () => void;
+  goHome: () => void;
 }
 
-const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateToConfirmacao }) => {
+const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateToConfirmacao, goHome }) => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,10 +47,8 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
           </div>
           <div className="flex flex-1 justify-end gap-2 sm:gap-4">
             <div className="flex gap-2">
-              <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-100 dark:bg-[#283039] text-slate-600 dark:text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"><span className="material-symbols-outlined text-xl">notifications</span></button>
               <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-100 dark:bg-[#283039] text-slate-600 dark:text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"><span className="material-symbols-outlined text-xl">dark_mode</span></button>
             </div>
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User avatar image" style={{ backgroundImage: `url("https://picsum.photos/40/40")` }}></div>
           </div>
         </header>
         <main className="px-4 sm:px-10 lg:px-20 flex flex-1 justify-center py-5">
@@ -99,7 +98,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
                 }
               </section>
               <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-6">
-                <button type="button" className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600">Cancelar</button>
+                <button type="button" onClick={goHome} className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600">Cancelar</button>
                 <button type="submit" className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-white bg-primary hover:bg-primary/90">Enviar Denúncia</button>
               </footer>
             </form>

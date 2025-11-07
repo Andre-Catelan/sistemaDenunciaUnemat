@@ -7,4 +7,7 @@ export enum Screen {
   LoginAtendente,
   PainelDenunciaAtendente,
   DetalhesDenuncia,
+  AcessoSeguro,
+  RecuperarSenha,
+  RedefinirSenha,
 }

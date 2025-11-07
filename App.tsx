@@ -7,6 +7,9 @@ import DetalhesDenuncia from './components/DetalhesDenuncia';
 import LoginAtendente from './components/LoginAtendente';
 import PainelDenunciaAtendente from './components/PainelDenunciaAtendente';
 import RegistrarNovaDenuncia from './components/RegistrarNovaDenuncia';
+import AcessoSeguro from './components/AcessoSeguro';
+import RecuperarSenha from './components/RecuperarSenha';
+import RedefinirSenha from './components/RedefinirSenha';
 
 const App: React.FC = () => {
     const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Home);
@@ -24,28 +27,39 @@ const App: React.FC = () => {
                             </div>
                             <h1 className="text-3xl font-bold">Sistema de Canal de Denúncias</h1>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <button onClick={() => setCurrentScreen(Screen.RegistrarNovaDenuncia)} className="px-6 py-3 rounded-lg text-base font-medium text-white bg-primary hover:bg-primary/90 transition-colors shadow-lg">
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <button onClick={() => setCurrentScreen(Screen.RegistrarNovaDenuncia)} className="w-full sm:w-auto px-6 py-3 rounded-lg text-base font-medium text-white bg-primary hover:bg-primary/90 transition-colors shadow-lg">
                                 Registrar Nova Denúncia
                             </button>
-                            <button onClick={() => setCurrentScreen(Screen.LoginAtendente)} className="px-6 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shadow-lg">
+                            <button onClick={() => setCurrentScreen(Screen.AcessoSeguro)} className="w-full sm:w-auto px-6 py-3 rounded-lg text-base font-medium text-white bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors shadow-lg">
+                                Acompanhar Denúncia
+                            </button>
+                        </div>
+                        <div className="mt-8">
+                            <button onClick={() => setCurrentScreen(Screen.LoginAtendente)} className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors">
                                 Acesso do Atendente
                             </button>
                         </div>
                     </div>
                 );
             case Screen.RegistrarNovaDenuncia:
-                return <RegistrarNovaDenuncia navigateToConfirmacao={() => setCurrentScreen(Screen.ConfirmacaoEnvio)} />;
+                return <RegistrarNovaDenuncia navigateToConfirmacao={() => setCurrentScreen(Screen.ConfirmacaoEnvio)} goHome={() => setCurrentScreen(Screen.Home)} />;
             case Screen.ConfirmacaoEnvio:
                 return <ConfirmacaoEnvio navigateToAcompanhamento={() => setCurrentScreen(Screen.AcompanhamentoDenuncia)} goHome={() => setCurrentScreen(Screen.Home)} />;
             case Screen.AcompanhamentoDenuncia:
                 return <AcompanhamentoDenuncia goHome={() => setCurrentScreen(Screen.Home)} />;
             case Screen.LoginAtendente:
-                return <LoginAtendente navigateToPainel={() => setCurrentScreen(Screen.PainelDenunciaAtendente)} />;
+                return <LoginAtendente navigateToPainel={() => setCurrentScreen(Screen.PainelDenunciaAtendente)} goHome={() => setCurrentScreen(Screen.Home)} navigateToRecuperarSenha={() => setCurrentScreen(Screen.RecuperarSenha)} />;
             case Screen.PainelDenunciaAtendente:
-                return <PainelDenunciaAtendente navigateToDetalhes={() => setCurrentScreen(Screen.DetalhesDenuncia)} />;
+                return <PainelDenunciaAtendente navigateToDetalhes={() => setCurrentScreen(Screen.DetalhesDenuncia)} navigateToLogin={() => setCurrentScreen(Screen.LoginAtendente)} />;
             case Screen.DetalhesDenuncia:
                 return <DetalhesDenuncia navigateBack={() => setCurrentScreen(Screen.PainelDenunciaAtendente)} />;
+            case Screen.AcessoSeguro:
+                return <AcessoSeguro navigateToNext={() => setCurrentScreen(Screen.AcompanhamentoDenuncia)} navigateBack={() => setCurrentScreen(Screen.Home)} />;
+            case Screen.RecuperarSenha:
+                return <RecuperarSenha navigateBackToLogin={() => setCurrentScreen(Screen.LoginAtendente)} navigateToRedefinirSenha={() => setCurrentScreen(Screen.RedefinirSenha)} />;
+            case Screen.RedefinirSenha:
+                return <RedefinirSenha navigateBackToLogin={() => setCurrentScreen(Screen.LoginAtendente)} />;
             default:
                 return (
                     <div className="flex flex-col items-center justify-center min-h-screen">

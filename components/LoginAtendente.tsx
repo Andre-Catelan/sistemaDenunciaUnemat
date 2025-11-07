@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 
 interface LoginAtendenteProps {
   navigateToPainel: () => void;
+  goHome: () => void;
+  navigateToRecuperarSenha: () => void;
 }
 
-const LoginAtendente: React.FC<LoginAtendenteProps> = ({ navigateToPainel }) => {
+const LoginAtendente: React.FC<LoginAtendenteProps> = ({ navigateToPainel, goHome, navigateToRecuperarSenha }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -61,10 +63,19 @@ const LoginAtendente: React.FC<LoginAtendenteProps> = ({ navigateToPainel }) => 
                     </div>
                   </div>
                 </label>
-                <div className="flex justify-end">
-                  <a className="text-primary text-sm font-medium leading-normal underline hover:text-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-background-dark focus:ring-primary rounded-sm" href="#">Esqueci minha senha</a>
+                <div className="text-right -mt-4">
+                  <button
+                    type="button"
+                    onClick={navigateToRecuperarSenha}
+                    className="text-sm font-medium text-primary hover:underline focus:outline-none"
+                  >
+                    Esqueceu sua senha?
+                  </button>
                 </div>
-                <button type="submit" className="flex items-center justify-center whitespace-nowrap h-12 px-6 rounded-lg w-full bg-primary text-white text-base font-bold leading-normal tracking-wide shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-background-dark">Entrar</button>
+                <div className="flex flex-col-reverse sm:flex-row-reverse gap-4">
+                  <button type="submit" className="flex items-center justify-center whitespace-nowrap h-12 px-6 rounded-lg w-full sm:w-auto bg-primary text-white text-base font-bold leading-normal tracking-wide shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-background-dark">Entrar</button>
+                  <button type="button" onClick={goHome} className="flex items-center justify-center whitespace-nowrap h-12 px-6 rounded-lg w-full sm:w-auto bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-base font-bold leading-normal tracking-wide shadow-sm hover:bg-slate-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-background-dark">Voltar</button>
+                </div>
                 {error && (
                   <div className="flex items-center gap-2 rounded-lg bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-400 border border-red-500/20">
                     <span className="material-symbols-outlined">error</span>

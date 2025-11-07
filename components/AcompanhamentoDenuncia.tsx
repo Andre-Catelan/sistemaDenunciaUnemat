@@ -1,11 +1,35 @@
-
-import React from 'react';
+import React, { useState, useRef } from 'react';
 
 interface AcompanhamentoDenunciaProps {
   goHome: () => void;
 }
 
 const AcompanhamentoDenuncia: React.FC<AcompanhamentoDenunciaProps> = ({ goHome }) => {
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFiles(prevFiles => [...prevFiles, ...Array.from(event.target.files!)]);
+      event.target.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo novamente
+    }
+  };
+  
+  const removeFile = (fileName: string) => {
+    setFiles(prevFiles => prevFiles.filter(file => file.name !== fileName));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Lógica de envio da mensagem e arquivos
+    alert('Mensagem e arquivos enviados com sucesso!');
+    if(messageRef.current) {
+      messageRef.current.value = "";
+    }
+    setFiles([]);
+  };
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark">
       <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3 bg-white dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-10">
@@ -38,7 +62,7 @@ const AcompanhamentoDenuncia: React.FC<AcompanhamentoDenunciaProps> = ({ goHome 
                     <p className="text-amber-500 text-sm font-medium">Em Apuração</p>
                   </div>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Sua denúncia está sendo analisada pela nossa equipe de conformidade. Você será notificado aqui sobre qualquer atualização ou solicitação de informação adicional.</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">Sua denúncia foi recebida e está sendo analisada pela Ouvidoria do Campus UNEMAT - Cáceres. Você será notificado(a) por este canal sobre qualquer atualização ou solicitação de informações adicionais.</p>
                 <div className="mt-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
                   <div className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-primary mt-1 text-xl">security</span>
@@ -63,11 +87,11 @@ const AcompanhamentoDenuncia: React.FC<AcompanhamentoDenunciaProps> = ({ goHome 
                   </div>
                   <div className="flex-1">
                     <div className="flex items-baseline justify-between">
-                      <p className="font-bold text-slate-800 dark:text-slate-200">Analista do Canal</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">Analista da Ouvidoria</p>
                       <time className="text-xs text-slate-500 dark:text-slate-400">15/07/2024 às 14:30</time>
                     </div>
                     <div className="mt-2 p-4 rounded-lg rounded-tl-none bg-slate-100 dark:bg-slate-800">
-                      <p className="text-slate-700 dark:text-slate-300">Prezado(a), recebemos sua denúncia e iniciamos o processo de apuração. Gostaríamos de solicitar, se possível, o envio de qualquer documentação adicional que possa comprovar os fatos relatados. Agradecemos sua colaboração.</p>
+                      <p className="text-slate-700 dark:text-slate-300">Prezado(a) membro da comunidade acadêmica, recebemos sua denúncia. Ela foi registrada e encaminhada para o comitê de ética para apuração inicial. Agradecemos sua colaboração para um ambiente universitário mais seguro e íntegro.</p>
                     </div>
                   </div>
                 </div>
@@ -78,7 +102,7 @@ const AcompanhamentoDenuncia: React.FC<AcompanhamentoDenunciaProps> = ({ goHome 
                       <time className="text-xs text-slate-500 dark:text-slate-400">14/07/2024 às 09:15</time>
                     </div>
                     <div className="mt-2 p-4 rounded-lg rounded-tr-none bg-primary/10 dark:bg-primary/20">
-                      <p className="text-slate-700 dark:text-slate-300">Gostaria de relatar uma situação de não conformidade ocorrida no departamento X. Os eventos ocorreram na última semana e envolvem a aprovação de contratos sem a devida diligência.</p>
+                      <p className="text-slate-700 dark:text-slate-300">Gostaria de relatar uma situação de assédio moral ocorrida no Departamento de História. O evento aconteceu na última semana e envolve um professor que tem constrangido alunos publicamente durante as aulas.</p>
                     </div>
                   </div>
                   <div className="flex-shrink-0 size-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
@@ -88,12 +112,25 @@ const AcompanhamentoDenuncia: React.FC<AcompanhamentoDenunciaProps> = ({ goHome 
               </div>
               <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-background-dark rounded-b-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Enviar Nova Mensagem ou Anexo</h3>
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
-                    <textarea className="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="message" name="message" placeholder="Digite sua mensagem aqui..." rows={4}></textarea>
+                    <textarea ref={messageRef} className="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="message" name="message" placeholder="Digite sua mensagem aqui..." rows={4}></textarea>
                   </div>
+                   {files.length > 0 &&
+                    <div className="flex flex-col gap-3 pt-2">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Arquivos anexados:</p>
+                      {files.map((file, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-slate-200 dark:bg-slate-800">
+                          <span className="material-symbols-outlined text-slate-500 flex-shrink-0">{file.type.startsWith('image/') ? 'image' : 'draft'}</span>
+                          <div className="flex-grow min-w-0"><p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{file.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / 1024).toFixed(2)} KB</p></div>
+                          <button type="button" onClick={() => removeFile(file.name)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 flex-shrink-0"><span className="material-symbols-outlined text-red-500 text-base">delete</span></button>
+                        </div>
+                      ))}
+                    </div>
+                  }
                   <div className="flex flex-wrap items-center justify-between gap-4">
-                    <button className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark" type="button">
+                    <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark" type="button">
                       <span className="material-symbols-outlined text-base">attach_file</span>
                       Anexar Arquivo
                     </button>
