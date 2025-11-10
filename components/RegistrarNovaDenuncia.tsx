@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface RegistrarNovaDenunciaProps {
   navigateToConfirmacao: (protocolo: string, senha: string) => void;
@@ -15,6 +15,37 @@ interface FormData {
   id_unidade: string;
 }
 
+const ApiStatusIndicator: React.FC<{ status: 'checking' | 'online' | 'offline' }> = ({ status }) => {
+    if (status === 'checking') {
+        return (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                <p className="text-sm font-medium">Verificando conexão com a API...</p>
+            </div>
+        );
+    }
+
+    if (status === 'online') {
+        return (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
+                <span className="material-symbols-outlined text-base">check_circle</span>
+                <p className="text-sm font-medium">Conexão com a API estabelecida com sucesso!</p>
+            </div>
+        );
+    }
+
+    return (
+         <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">
+            <span className="material-symbols-outlined text-base mt-0.5">error</span>
+            <div>
+                <p className="text-sm font-bold">Não foi possível conectar à API.</p>
+                <p className="text-sm mt-1">Verifique se o seu backend está rodando em <strong>http://localhost:8080</strong> e se a configuração de CORS foi aplicada corretamente em seu projeto Java.</p>
+            </div>
+        </div>
+    );
+};
+
+
 const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateToConfirmacao, goHome }) => {
   const [formData, setFormData] = useState<FormData>({
     titulo: '',
@@ -28,6 +59,32 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+
+    const checkApi = async () => {
+        try {
+            // An OPTIONS request is a lightweight way to check if the server is up and if CORS is configured.
+            // The browser will handle the preflight check. If it fails, fetch() will throw an error.
+            await fetch('http://localhost:8080/api/denuncias', {
+                method: 'OPTIONS',
+                signal: controller.signal,
+            });
+            // If the fetch promise resolves, it means the server responded.
+            setApiStatus('online');
+        } catch (e) {
+            setApiStatus('offline');
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    };
+
+    checkApi();
+  }, []);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -61,6 +118,11 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
     e.preventDefault();
     setError(null);
 
+    if (apiStatus === 'offline') {
+        setError("Não é possível enviar a denúncia. Verifique a conexão com a API indicada acima.");
+        return;
+    }
+
     // Validação básica
     if (!formData.titulo || !formData.descricao || !formData.id_categoria || !formData.data_fato || !formData.local_fato || !formData.id_unidade) {
         setError("Todos os campos marcados com * são obrigatórios.");
@@ -84,7 +146,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
 
       if (!response.ok) {
         // Tenta extrair uma mensagem de erro do backend, se houver.
-        const errorData = await response.json().catch(() => ({ message: 'Ocorreu um erro desconhecido.' }));
+        const errorData = await response.json().catch(() => ({ message: `O servidor respondeu com o status ${response.status}.` }));
         throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
       }
       
@@ -94,7 +156,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
 
     } catch (err) {
       if (err instanceof Error) {
-        setError(`Falha ao enviar denúncia: ${err.message}. Verifique se a sua API backend está rodando na porta 8080.`);
+        setError(`Falha ao enviar denúncia: ${err.message}.`);
       } else {
         setError('Ocorreu um erro inesperado.');
       }
@@ -126,7 +188,10 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
             <div className="flex flex-wrap justify-between gap-3 p-4">
               <div className="flex min-w-72 flex-col gap-3"><p className="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">Registrar Nova Denúncia</p><p className="text-slate-500 dark:text-[#9dabb9] text-base font-normal leading-normal">Preencha o formulário abaixo para registrar sua denúncia. As informações fornecidas serão tratadas com confidencialidade.</p></div>
             </div>
-            <form className="flex flex-col gap-8 p-4" onSubmit={handleSubmit}>
+            <div className="px-4 pb-4">
+                <ApiStatusIndicator status={apiStatus} />
+            </div>
+            <form className="flex flex-col gap-8 p-4 pt-0" onSubmit={handleSubmit}>
               <section className="flex flex-col gap-4 border border-slate-200 dark:border-slate-800 rounded-xl p-6 bg-white dark:bg-slate-900/30">
                 <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 border-b border-slate-200 dark:border-slate-800">Detalhes da Denúncia</h3>
                 <div className="grid grid-cols-1 gap-6">
@@ -175,7 +240,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
               )}
               <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-6">
                 <button type="button" onClick={goHome} disabled={isSubmitting} className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50">Cancelar</button>
-                <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button type="submit" disabled={isSubmitting || apiStatus !== 'online'} className="w-full sm:w-auto flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
                   {isSubmitting ? 'Enviando...' : 'Enviar Denúncia'}
                 </button>
               </footer>
