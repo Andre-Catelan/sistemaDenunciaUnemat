@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface RegistrarNovaDenunciaProps {
   navigateToConfirmacao: (protocolo: string, senha: string) => void;
@@ -15,12 +15,12 @@ interface FormData {
   id_unidade: string;
 }
 
-const ApiStatusIndicator: React.FC<{ status: 'checking' | 'online' | 'offline' }> = ({ status }) => {
+const ApiStatusIndicator: React.FC<{ status: 'checking' | 'online' | 'network_error' | 'cors_error'; apiUrl: string; onRetry: () => void }> = ({ status, apiUrl, onRetry }) => {
     if (status === 'checking') {
         return (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                <p className="text-sm font-medium">Verificando conexão com a API...</p>
+                <p className="text-sm font-medium">Verificando conexão com a API em <code className="text-xs">{apiUrl}</code>...</p>
             </div>
         );
     }
@@ -33,33 +33,53 @@ const ApiStatusIndicator: React.FC<{ status: 'checking' | 'online' | 'offline' }
             </div>
         );
     }
+    
+    if (status === 'network_error') {
+        return (
+             <div className="flex flex-col gap-3 p-4 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-xl mt-0.5">wifi_off</span>
+                    <div>
+                        <p className="text-base font-bold">Falha de Conexão</p>
+                        <p className="text-sm mt-1">
+                            Não foi possível conectar ao servidor em <code className="text-xs bg-amber-200 dark:bg-amber-900/50 p-1 rounded">{apiUrl}</code>.
+                        </p>
+                        <p className="text-sm mt-2 font-semibold">Possíveis causas:</p>
+                         <ul className="list-disc list-inside text-sm mt-1 space-y-1">
+                            <li>O servidor Java (Spring Boot) não está em execução.</li>
+                            <li>O endereço ou a porta da API no campo acima estão incorretos.</li>
+                            <li>Um firewall pode estar bloqueando a conexão.</li>
+                        </ul>
+                        <button onClick={onRetry} className="mt-3 inline-flex items-center gap-2 rounded-md border border-amber-500/50 bg-amber-400/20 px-3 py-1.5 text-sm font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-400/30">
+                            <span className="material-symbols-outlined text-base">refresh</span>
+                            Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-3 p-4 rounded-lg bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">
             <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-xl mt-0.5">error</span>
                 <div>
-                    <p className="text-base font-bold">Falha de Conexão: Problema de CORS</p>
+                    <p className="text-base font-bold">Falha de Conexão: Possível Problema de CORS</p>
                     <p className="text-sm mt-1">
-                        O teste de conexão <code className="text-xs bg-red-200 dark:bg-red-900/50 p-1 rounded">curl</code> foi bem-sucedido, o que confirma que sua API está no ar. O erro atual é causado pela política de segurança (CORS) do navegador.
+                        A conexão com a API foi estabelecida, mas a requisição foi bloqueada pela política de segurança (CORS) do navegador. Isso geralmente acontece quando o backend não autoriza o frontend a acessá-lo.
                     </p>
-                    <p className="text-sm mt-2 font-semibold">Para corrigir, adicione a seguinte classe de configuração <code className="text-xs bg-red-200 dark:bg-red-900/50 p-1 rounded">WebConfig.java</code> ao seu projeto Spring Boot:</p>
+                    <p className="text-sm mt-2 font-semibold">Se você já adicionou a classe <code className="text-xs bg-red-200 dark:bg-red-900/50 p-1 rounded">WebConfig.java</code>, certifique-se de ter reiniciado o servidor Spring Boot.</p>
                 </div>
             </div>
             <pre className="w-full bg-slate-900 text-slate-300 p-3 rounded-md text-xs overflow-x-auto">
                 <code>
-{`import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-@Configuration
+{`@Configuration
 public class WebConfig implements WebMvcConfigurer {
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                // Mude para a URL do seu frontend em produção
-                .allowedOrigins("*") 
+                .allowedOrigins("*") // Idealmente, URL do frontend
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
@@ -68,16 +88,6 @@ public class WebConfig implements WebMvcConfigurer {
 `}
                 </code>
             </pre>
-            <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-xl mt-0.5 text-amber-500">info</span>
-                <div>
-                    <p className="text-sm font-bold text-amber-800 dark:text-amber-400">Instruções Importantes:</p>
-                    <ul className="list-disc list-inside text-sm mt-1 space-y-1">
-                        <li>Coloque este arquivo Java em um pacote de configuração do seu projeto (ex: <code className="text-xs">com.seuprojeto.config</code>).</li>
-                        <li><strong>REINICIE O SERVIDOR JAVA</strong> após adicionar o arquivo para que a alteração tenha efeito.</li>
-                    </ul>
-                </div>
-            </div>
         </div>
     );
 };
@@ -96,36 +106,39 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const apiUrl = 'http://127.0.0.1:8081/api/denuncias';
+  const [apiBaseUrl, setApiBaseUrl] = useState('http://127.0.0.1:8081');
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'network_error' | 'cors_error'>('checking');
+  
+  const checkApi = useCallback(async () => {
+    setApiStatus('checking');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const fullApiUrl = `${apiBaseUrl}/api/denuncias`;
+
+    try {
+        await fetch(fullApiUrl, {
+            method: 'OPTIONS',
+            signal: controller.signal,
+            headers: {
+              'Access-Control-Request-Method': 'POST',
+              'Access-Control-Request-Headers': 'content-type'
+            }
+        });
+        setApiStatus('online');
+    } catch (e) {
+        if (e instanceof Error && (e.name === 'TypeError' || e.name === 'AbortError')) {
+            setApiStatus('network_error');
+        } else {
+            setApiStatus('cors_error');
+        }
+    } finally {
+        clearTimeout(timeoutId);
+    }
+  }, [apiBaseUrl]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
-
-    const checkApi = async () => {
-        try {
-            // An OPTIONS request is a lightweight way to check if the server is up and if CORS is configured.
-            // The browser will handle the preflight check. If it fails, fetch() will throw an error.
-            await fetch(apiUrl, {
-                method: 'OPTIONS',
-                signal: controller.signal,
-                headers: {
-                  'Access-Control-Request-Method': 'POST',
-                  'Access-Control-Request-Headers': 'content-type'
-                }
-            });
-            // If the fetch promise resolves, it means the server responded.
-            setApiStatus('online');
-        } catch (e) {
-            setApiStatus('offline');
-        } finally {
-            clearTimeout(timeoutId);
-        }
-    };
-
     checkApi();
-  }, [apiUrl]);
+  }, [checkApi]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -160,8 +173,8 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
     e.preventDefault();
     setError(null);
 
-    if (apiStatus === 'offline') {
-        setError("Não é possível enviar a denúncia. Siga as instruções sobre CORS acima.");
+    if (apiStatus !== 'online') {
+        setError("Não é possível enviar a denúncia. Verifique a conexão com a API e tente novamente.");
         return;
     }
 
@@ -173,27 +186,25 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
     
     setIsSubmitting(true);
     try {
-      // O backend espera números para os IDs, então convertemos aqui.
       const payload = {
           ...formData,
           id_categoria: parseInt(formData.id_categoria, 10),
           id_unidade: parseInt(formData.id_unidade, 10),
       };
-
-      const response = await fetch(apiUrl, {
+      
+      const fullApiUrl = `${apiBaseUrl}/api/denuncias`;
+      const response = await fetch(fullApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        // Tenta extrair uma mensagem de erro do backend, se houver.
         const errorData = await response.json().catch(() => ({ message: `O servidor respondeu com o status ${response.status}.` }));
         throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
       }
       
       const result = await response.json();
-      // O backend deve retornar um objeto com `protocolo` e `senhaAcesso`
       navigateToConfirmacao(result.protocolo, result.senhaAcesso);
 
     } catch (err) {
@@ -234,10 +245,20 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
             <div className="flex flex-wrap justify-between gap-3 p-4">
               <div className="flex min-w-72 flex-col gap-3"><p className="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">Registrar Nova Denúncia</p><p className="text-slate-500 dark:text-[#9dabb9] text-base font-normal leading-normal">Preencha o formulário abaixo para registrar sua denúncia. As informações fornecidas serão tratadas com confidencialidade.</p></div>
             </div>
-            <div className="px-4 pb-4">
-                <ApiStatusIndicator status={apiStatus} />
+            <div className="p-4 space-y-4">
+                 <label className="flex flex-col w-full gap-1.5">
+                    <p className="text-slate-700 dark:text-white text-sm font-medium">URL da API do Backend</p>
+                    <div className="flex items-center gap-2">
+                        <input name="api_url" value={apiBaseUrl} onChange={(e) => setApiBaseUrl(e.target.value)} className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-[#3b4754] bg-background-light dark:bg-[#1c2127] h-11 placeholder:text-slate-400 dark:placeholder:text-[#9dabb9] px-3 text-sm font-normal leading-normal" placeholder="http://localhost:8080" />
+                        <button type="button" onClick={checkApi} className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-200 dark:bg-slate-700 px-4 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">
+                           <span className="material-symbols-outlined text-base">sync</span>
+                           <span>Re-testar Conexão</span>
+                        </button>
+                    </div>
+                </label>
+                <ApiStatusIndicator status={apiStatus} apiUrl={apiBaseUrl} onRetry={checkApi} />
             </div>
-            <form className="flex flex-col gap-8 p-4 pt-0" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-8 p-4 pt-4" onSubmit={handleSubmit}>
               <section className="flex flex-col gap-4 border border-slate-200 dark:border-slate-800 rounded-xl p-6 bg-white dark:bg-slate-900/30">
                 <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 border-b border-slate-200 dark:border-slate-800">Detalhes da Denúncia</h3>
                 <div className="grid grid-cols-1 gap-6">
