@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 interface ConfirmacaoEnvioProps {
   navigateToAcompanhamento: () => void;
   goHome: () => void;
+  denunciaInfo: {
+    protocolo: string;
+    senha: string;
+  };
 }
 
-const ConfirmacaoEnvio: React.FC<ConfirmacaoEnvioProps> = ({ navigateToAcompanhamento, goHome }) => {
-  const protocol = `PROTO-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-  const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+const ConfirmacaoEnvio: React.FC<ConfirmacaoEnvioProps> = ({ navigateToAcompanhamento, goHome, denunciaInfo }) => {
+  const { protocolo, senha } = denunciaInfo;
   const [showToast, setShowToast] = useState(false);
   
   const copyToClipboard = (text: string) => {
@@ -41,9 +44,9 @@ const ConfirmacaoEnvio: React.FC<ConfirmacaoEnvioProps> = ({ navigateToAcompanha
                 <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="text-left">
                     <p className="text-gray-500 dark:text-[#9dabb9] text-sm font-normal leading-normal">Número de Protocolo</p>
-                    <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal tracking-wide">{protocol}</p>
+                    <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal tracking-wide">{protocolo}</p>
                   </div>
-                  <button onClick={() => copyToClipboard(protocol)} className="no-print flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <button onClick={() => copyToClipboard(protocolo)} className="no-print flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                     <span className="material-symbols-outlined text-base">content_copy</span>
                     <span className="truncate">Copiar</span>
                   </button>
@@ -51,10 +54,10 @@ const ConfirmacaoEnvio: React.FC<ConfirmacaoEnvioProps> = ({ navigateToAcompanha
                 <div className="border-t border-gray-200 dark:border-gray-700"></div>
                 <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="text-left">
-                    <p className="text-gray-500 dark:text-[#9dabb9] text-sm font-normal leading-normal">Código de Acesso</p>
-                    <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal tracking-wide">{accessCode}</p>
+                    <p className="text-gray-500 dark:text-[#9dabb9] text-sm font-normal leading-normal">Senha de Acesso</p>
+                    <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal tracking-wide">{senha}</p>
                   </div>
-                  <button onClick={() => copyToClipboard(accessCode)} className="no-print flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <button onClick={() => copyToClipboard(senha)} className="no-print flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                     <span className="material-symbols-outlined text-base">content_copy</span>
                     <span className="truncate">Copiar</span>
                   </button>
@@ -65,7 +68,7 @@ const ConfirmacaoEnvio: React.FC<ConfirmacaoEnvioProps> = ({ navigateToAcompanha
                   <span className="material-symbols-outlined text-yellow-500 dark:text-yellow-400 mt-0.5">warning</span>
                   <div className="flex flex-col items-start text-left">
                     <p className="text-yellow-800 dark:text-yellow-300 text-base font-bold leading-tight">Atenção!</p>
-                    <p className="text-yellow-700 dark:text-yellow-300/80 text-sm font-normal leading-normal">Guarde seu código de acesso em um local seguro. Ele é a única forma de acessar sua denúncia no futuro e não pode ser recuperado.</p>
+                    <p className="text-yellow-700 dark:text-yellow-300/80 text-sm font-normal leading-normal">Guarde sua senha de acesso em um local seguro. Ela é a única forma de acessar sua denúncia no futuro e não pode ser recuperada.</p>
                   </div>
                 </div>
               </div>
