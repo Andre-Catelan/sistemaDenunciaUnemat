@@ -35,11 +35,48 @@ const ApiStatusIndicator: React.FC<{ status: 'checking' | 'online' | 'offline' }
     }
 
     return (
-         <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">
-            <span className="material-symbols-outlined text-base mt-0.5">error</span>
-            <div>
-                <p className="text-sm font-bold">Não foi possível conectar à API.</p>
-                <p className="text-sm mt-1">Verifique se o seu backend está rodando em <strong>http://localhost:8080</strong> e se a configuração de CORS foi aplicada corretamente em seu projeto Java.</p>
+        <div className="flex flex-col gap-3 p-4 rounded-lg bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">
+            <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-xl mt-0.5">error</span>
+                <div>
+                    <p className="text-base font-bold">Falha de Conexão: Problema de CORS</p>
+                    <p className="text-sm mt-1">
+                        O teste de conexão <code className="text-xs bg-red-200 dark:bg-red-900/50 p-1 rounded">curl</code> foi bem-sucedido, o que confirma que sua API está no ar. O erro atual é causado pela política de segurança (CORS) do navegador.
+                    </p>
+                    <p className="text-sm mt-2 font-semibold">Para corrigir, adicione a seguinte classe de configuração <code className="text-xs bg-red-200 dark:bg-red-900/50 p-1 rounded">WebConfig.java</code> ao seu projeto Spring Boot:</p>
+                </div>
+            </div>
+            <pre className="w-full bg-slate-900 text-slate-300 p-3 rounded-md text-xs overflow-x-auto">
+                <code>
+{`import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                // Mude para a URL do seu frontend em produção
+                .allowedOrigins("*") 
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
+}
+`}
+                </code>
+            </pre>
+            <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-xl mt-0.5 text-amber-500">info</span>
+                <div>
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-400">Instruções Importantes:</p>
+                    <ul className="list-disc list-inside text-sm mt-1 space-y-1">
+                        <li>Coloque este arquivo Java em um pacote de configuração do seu projeto (ex: <code className="text-xs">com.seuprojeto.config</code>).</li>
+                        <li><strong>REINICIE O SERVIDOR JAVA</strong> após adicionar o arquivo para que a alteração tenha efeito.</li>
+                    </ul>
+                </div>
             </div>
         </div>
     );
@@ -60,6 +97,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const apiUrl = 'http://127.0.0.1:8081/api/denuncias';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,9 +107,13 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
         try {
             // An OPTIONS request is a lightweight way to check if the server is up and if CORS is configured.
             // The browser will handle the preflight check. If it fails, fetch() will throw an error.
-            await fetch('http://localhost:8080/api/denuncias', {
+            await fetch(apiUrl, {
                 method: 'OPTIONS',
                 signal: controller.signal,
+                headers: {
+                  'Access-Control-Request-Method': 'POST',
+                  'Access-Control-Request-Headers': 'content-type'
+                }
             });
             // If the fetch promise resolves, it means the server responded.
             setApiStatus('online');
@@ -83,7 +125,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
     };
 
     checkApi();
-  }, []);
+  }, [apiUrl]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -119,7 +161,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
     setError(null);
 
     if (apiStatus === 'offline') {
-        setError("Não é possível enviar a denúncia. Verifique a conexão com a API indicada acima.");
+        setError("Não é possível enviar a denúncia. Siga as instruções sobre CORS acima.");
         return;
     }
 
@@ -138,7 +180,7 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
           id_unidade: parseInt(formData.id_unidade, 10),
       };
 
-      const response = await fetch('http://localhost:8080/api/denuncias', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -156,7 +198,11 @@ const RegistrarNovaDenuncia: React.FC<RegistrarNovaDenunciaProps> = ({ navigateT
 
     } catch (err) {
       if (err instanceof Error) {
-        setError(`Falha ao enviar denúncia: ${err.message}.`);
+        if (err.message.includes('Failed to fetch')) {
+             setError('Falha ao enviar denúncia: Não foi possível conectar ao servidor. Verifique sua conexão e se a API está no ar.');
+        } else {
+             setError(`Falha ao enviar denúncia: ${err.message}.`);
+        }
       } else {
         setError('Ocorreu um erro inesperado.');
       }
